@@ -1,10 +1,12 @@
+from fastapi import FastAPI, Depends, HTTPException
+
 from fastapi import FastAPI
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
 from models import User
-from schemas import UserCreate, UserResponse
-from security import hash_password
+from schemas import UserCreate, UserResponse, UserLogin
+from security import hash_password, verify_password, create_access_token
 
 app = FastAPI(title="Task Manager API")
 
@@ -27,3 +29,19 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
 
     return new_user
+
+@app.post("/login")
+def login(user: UserLogin, db: Session = Depends(get_db)):
+    # Verifica se o usuário existe
+    existing_user = db.query(User).filter(User.email == user.email).first()
+    if not existing_user:
+        raise HTTPException(status_code=401, detail="Email ou senha inválidos")
+
+    # Verifica a senha
+    if not verify_password(user.password, existing_user.hashed_password):
+        raise HTTPException(status_code=401, detail="Email ou senha inválidos")
+
+    # Cria o token de acesso
+    access_token = create_access_token(data={"sub": existing_user.email})
+
+    return {"access_token": access_token, "token_type": "bearer"}
