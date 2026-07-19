@@ -162,4 +162,6 @@ Este projeto foi desenvolvido como parte do meu portfólio, com foco em praticar
 - GitHub: [@GabrielHSFeliz](https://github.com/GabrielHSFeliz)
 ## 🌐 Deploy
 
-API em produção: https://task-manager-api-czcw.onrender.com/docs
+🔗 API em produção: https://task-manager-api-czcw.onrender.com/docs
+
+> Nota: o serviço está hospedado no plano gratuito do Render, que "dorme" após um período de inatividade. A primeira requisição após um tempo parado pode levar até 50 segundos para responder.
