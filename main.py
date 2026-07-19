@@ -67,3 +67,52 @@ def create_task(task: TaskCreate, current_user_email: str = Depends(get_current_
     db.refresh(new_task)
 
     return new_task
+
+@app.get("/tasks", response_model=list[TaskResponse])
+def list_tasks(current_user_email: str = Depends(get_current_user_email), db: Session = Depends(get_db)):
+    # Obtém o usuário atual com base no email do token
+    current_user = db.query(User).filter(User.email == current_user_email).first()
+    if not current_user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    # Lista todas as tarefas do usuário atual
+    tasks = db.query(Task).filter(Task.owner_id == current_user.id).all()
+    return tasks
+
+@app.delete("/tasks/{task_id}")
+def delete_task(task_id: int, current_user_email: str = Depends(get_current_user_email), db: Session = Depends(get_db)):
+    # Obtém o usuário atual com base no email do token
+    current_user = db.query(User).filter(User.email == current_user_email).first()
+    if not current_user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    # Verifica se a tarefa existe e pertence ao usuário atual
+    task = db.query(Task).filter(Task.id == task_id, Task.owner_id == current_user.id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Tarefa não encontrada")
+
+    # Deleta a tarefa
+    db.delete(task)
+    db.commit()
+
+    return {"message": "Tarefa deletada com sucesso"}
+
+@app.put("/tasks/{task_id}", response_model=TaskResponse)
+def update_task(task_id: int, task: TaskCreate, current_user_email: str = Depends(get_current_user_email), db: Session = Depends(get_db)):
+    # Obtém o usuário atual com base no email do token
+    current_user = db.query(User).filter(User.email == current_user_email).first()
+    if not current_user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    # Verifica se a tarefa existe e pertence ao usuário atual
+    existing_task = db.query(Task).filter(Task.id == task_id, Task.owner_id == current_user.id).first()
+    if not existing_task:
+        raise HTTPException(status_code=404, detail="Tarefa não encontrada")
+
+    # Atualiza os campos da tarefa
+    existing_task.title = task.title
+    existing_task.description = task.description
+    db.commit()
+    db.refresh(existing_task)
+
+    return existing_task
